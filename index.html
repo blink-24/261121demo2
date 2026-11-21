@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>화법과 언어: 문장 종결·높임·시간 표현 마스터</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans KR & Pretendard 스타일 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome 아이콘 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        /* 부드러운 전환 애니메이션 */
+        .fade-in {
+            animation: fadeIn 0.35s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        /* 테이블 스크롤바 스타일 */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- 상단 헤더 -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <span class="inline-block bg-indigo-500 text-indigo-100 text-xs font-semibold px-2.5 py-0.5 rounded-full mb-1">
+                    고등 국어 · 문법 개념 완성
+                </span>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight">
+                    문장 종결 · 높임 · 시간 표현
+                </h1>
+            </div>
+            <!-- 현재 최고 점수 및 상태 배지 -->
+            <div class="flex items-center gap-3 bg-indigo-700/70 px-3.5 py-2 rounded-xl border border-indigo-500/50">
+                <div class="text-right">
+                    <div class="text-[11px] text-indigo-200">나의 최고 점수</div>
+                    <div class="text-lg font-extrabold text-amber-300" id="header-best-score">0점</div>
+                </div>
+                <div class="h-8 w-[1px] bg-indigo-500/50"></div>
+                <div id="unlock-badge" class="flex items-center gap-1.5 text-xs font-semibold text-rose-200">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>복습 노트 잠김</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 네비게이션 탭 (탭1 / 탭2) -->
+        <nav class="bg-white border-b border-slate-200 text-slate-600">
+            <div class="max-w-4xl mx-auto px-4 flex">
+                <button id="tab-btn-1" onclick="switchTab(1)" class="flex-1 sm:flex-none sm:px-8 py-3.5 font-bold text-sm sm:text-base border-b-2 border-indigo-600 text-indigo-600 flex items-center justify-center gap-2 transition-colors">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>탭 1. 개념 탐구 퀴즈</span>
+                </button>
+                <button id="tab-btn-2" onclick="switchTab(2)" class="flex-1 sm:flex-none sm:px-8 py-3.5 font-bold text-sm sm:text-base border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center gap-2 transition-colors">
+                    <i id="tab2-icon" class="fa-solid fa-lock text-slate-400"></i>
+                    <span>탭 2. 핵심 정리 노트 (90점↑)</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="flex-1 max-w-4xl w-full mx-auto px-4 py-6 sm:py-8">
+
+        <!-- 커스텀 알림 토스트 (alert 대체) -->
+        <div id="toast-box" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden">
+            <div id="toast-content" class="bg-slate-800 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium">
+                <i id="toast-icon" class="fa-solid fa-circle-info text-amber-400 text-base"></i>
+                <span id="toast-message">알림 메시지</span>
+            </div>
+        </div>
+
+        <!-- ==================== 탭 1: 퀴즈 화면 ==================== -->
+        <section id="tab-1-content" class="fade-in">
+            <!-- 퀴즈 진행 상태 바 -->
+            <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                    <div class="flex items-center gap-2">
+                        <span id="quiz-category" class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-lg">
+                            1. 문장 종결 표현
+                        </span>
+                        <span class="text-sm font-semibold text-slate-600">
+                            문제 <span id="current-q-num" class="text-indigo-600 font-bold">1</span> / <span id="total-q-num">10</span>
+                        </span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-700">
+                        현재 점수: <span id="current-score" class="text-indigo-600 text-base">0</span>점
+                    </div>
+                </div>
+                <!-- 프로그레스 바 -->
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 10%;"></div>
+                </div>
+            </div>
+
+            <!-- 문제 카드 -->
+            <div id="quiz-card" class="bg-white rounded-2xl p-5 sm:p-8 shadow-sm border border-slate-200">
+                <!-- 발문 -->
+                <h2 id="question-text" class="text-lg sm:text-xl font-bold text-slate-800 leading-relaxed mb-4">
+                    문제가 로딩 중입니다...
+                </h2>
+
+                <!-- 예문 박스 (있을 경우 표시) -->
+                <div id="example-box" class="bg-slate-50 border-l-4 border-indigo-500 p-4 rounded-r-xl mb-6 text-slate-700 text-sm sm:text-base leading-relaxed hidden">
+                </div>
+
+                <!-- 힌트 버튼 및 힌트 영역 -->
+                <div class="mb-6">
+                    <button id="hint-toggle-btn" onclick="toggleHint()" class="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3.5 py-2 rounded-xl transition-colors">
+                        <i class="fa-regular fa-lightbulb"></i>
+                        <span>개념 힌트 보기</span>
+                    </button>
+                    <div id="hint-box" class="hidden mt-3 bg-amber-50/80 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 leading-relaxed fade-in">
+                        <div class="font-bold text-amber-800 mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-key text-amber-600"></i> 스스로 생각해 보기 힌트
+                        </div>
+                        <p id="hint-text"></p>
+                    </div>
+                </div>
+
+                <!-- 선택지 영역 -->
+                <div id="options-container" class="space-y-3">
+                    <!-- JS로 선택지 동적 생성 -->
+                </div>
+
+                <!-- 피드백 메시지 영역 (정답을 바로 알려주지 않고 사고를 유도함) -->
+                <div id="feedback-box" class="hidden mt-6 p-4 rounded-xl border text-sm sm:text-base leading-relaxed fade-in">
+                    <div class="flex items-start gap-3">
+                        <i id="feedback-icon" class="fa-solid fa-circle-check text-xl mt-0.5"></i>
+                        <div>
+                            <div id="feedback-title" class="font-bold mb-1"></div>
+                            <p id="feedback-desc" class="text-sm"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 하단 컨트롤 버튼 -->
+                <div class="mt-8 pt-5 border-t border-slate-100 flex items-center justify-between">
+                    <button id="prev-btn" onclick="prevQuestion()" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-colors">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> 이전 문제
+                    </button>
+                    <button id="next-btn" onclick="nextQuestion()" disabled class="px-6 py-2.5 rounded-xl text-sm sm:text-base font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 transition-all shadow-sm">
+                        다음 문제 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 퀴즈 최종 결과 화면 (완료 시 표시) -->
+            <div id="quiz-result-card" class="hidden bg-white rounded-2xl p-6 sm:p-10 shadow-sm border border-slate-200 text-center fade-in">
+                <div id="result-icon-wrap" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4">
+                </div>
+                <h2 id="result-title" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2"></h2>
+                <p id="result-subtitle" class="text-slate-600 text-sm sm:text-base mb-6 max-w-md mx-auto leading-relaxed"></p>
+                
+                <div class="inline-block bg-slate-50 border border-slate-200 rounded-2xl px-8 py-4 mb-8">
+                    <div class="text-xs text-slate-500 font-semibold mb-1">최종 획득 점수</div>
+                    <div id="final-score-display" class="text-4xl font-black text-indigo-600">0점</div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button onclick="restartQuiz()" class="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> 다시 도전하기
+                    </button>
+                    <button id="go-review-btn" onclick="switchTab(2)" class="w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-md flex items-center justify-center gap-2 hidden">
+                        <i class="fa-solid fa-book-open"></i> 핵심 복습 노트 열기
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 탭 2: 핵심 정리 복습 자료 (90점 이상 잠금 해제) ==================== -->
+        <section id="tab-2-content" class="hidden fade-in">
+            
+            <!-- 잠금 상태 안내 화면 -->
+            <div id="locked-view" class="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-slate-200 text-center">
+                <div class="w-20 h-20 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center text-3xl mx-auto mb-5">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3">
+                    복습 노트가 아직 잠겨 있습니다
+                </h2>
+                <p class="text-slate-600 text-sm sm:text-base max-w-md mx-auto leading-relaxed mb-6">
+                    학습지 없이 스스로 개념을 탐구할 수 있도록, <strong>탭 1의 개념 탐구 퀴즈에서 90점 이상</strong>을 달성하면 시각화된 핵심 정리 노트가 열립니다!
+                </p>
+                <div class="bg-indigo-50 text-indigo-800 text-xs sm:text-sm font-semibold px-4 py-3 rounded-xl inline-block mb-6">
+                    현재 최고 점수: <span id="locked-current-best" class="font-extrabold">0점</span> / 목표 점수: <span class="font-extrabold">90점</span>
+                </div>
+                <div>
+                    <button onclick="switchTab(1)" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm sm:text-base transition-colors shadow-sm">
+                        <i class="fa-solid fa-pen-to-square mr-1.5"></i> 퀴즈 풀러 가기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 잠금 해제된 복습 자료 화면 -->
+            <div id="unlocked-view" class="hidden space-y-6">
+                <!-- 상단 축하 배너 -->
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 bg-white/20 text-xs font-bold px-2.5 py-1 rounded-full mb-2">
+                            <i class="fa-solid fa-unlock"></i> 90점 이상 달성 완료!
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold">문장 종결 · 높임 · 시간 표현 핵심 노트</h2>
+                        <p class="text-emerald-100 text-xs sm:text-sm mt-1">집에서도 언제든 꺼내 볼 수 있도록 학습지의 핵심 내용을 한눈에 정리했습니다.</p>
+                    </div>
+                    <button onclick="switchTab(1)" class="shrink-0 bg-white text-emerald-700 hover:bg-emerald-50 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm">
+                        퀴즈 다시 풀기
+                    </button>
+                </div>
+
+                <!-- 개념 카드 1: 문장 종결 표현 & 직접·간접 발화 -->
+                <div class="bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 font-black flex items-center justify-center">1</span>
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-800">문장 종결 표현과 직접·간접 발화</h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                            <h4 class="font-bold text-indigo-700 text-sm mb-2">① 문장 유형별 제약 (명령·청유·감탄)</h4>
+                            <ul class="text-xs sm:text-sm text-slate-700 space-y-2 leading-relaxed">
+                                <li>• <strong>명령문·청유문 서술어 제약:</strong> 원칙적으로 <span class="bg-amber-100 px-1 rounded font-semibold">동사</span>만 가능하며, 형용사는 쓸 수 없음. <br><span class="text-slate-500 text-xs">(예: 예뻐라(X), 예쁘자(X) / 단, '건강해라', '행복하자' 등 예외적 쓰임 주의)</span></li>
+                                <li>• <strong>주어 제약:</strong> 명령문은 '청자', 청유문은 '화자+청자'가 주어이며 보통 <strong>생략</strong>됨.</li>
+                                <li>• <strong>감탄문:</strong> 청자를 의식하지 않고 <strong>독백</strong>하는 상태에서 느낌을 표현함. <span class="text-slate-500 text-xs">(예: 정말 열심히 노력했구나!)</span></li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                            <h4 class="font-bold text-indigo-700 text-sm mb-2">② 직접 발화 vs 간접 발화</h4>
+                            <ul class="text-xs sm:text-sm text-slate-700 space-y-2 leading-relaxed">
+                                <li>• <strong>직접 발화:</strong> 문장 유형과 화자의 의도가 일치함.<br><span class="text-slate-500 text-xs">(예: 창밖을 보며 "비 온다." → 평서문 / 정보 전달)</span></li>
+                                <li>• <strong>간접 발화:</strong> 문장 유형과 화자의 실제 의도가 다름.<br><span class="text-slate-500 text-xs">(예: 열린 창문을 보며 "비 온다." → 평서문 / 창문을 닫으라는 명령)</span></li>
+                                <li>• <strong>간접 발화 효과:</strong> 명령이나 청유를 의문문·평서문으로 완곡하게 표현하여 <span class="bg-indigo-100 px-1 rounded font-semibold">청자의 부담이나 불쾌감을 덜어 줌</span>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 개념 카드 2: 높임 표현 (간접 높임, 상대 높임, 겸양 표현) -->
+                <div class="bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 font-black flex items-center justify-center">2</span>
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-800">높임 표현의 핵심 (간접 높임 · 상대 높임 · 겸양)</h3>
+                    </div>
+
+                    <!-- 직접 높임 vs 간접 높임 비교 -->
+                    <div class="mb-6">
+                        <h4 class="font-bold text-emerald-700 text-sm sm:text-base mb-2.5">① 객체 높임 특수 어휘와 주체 간접 높임</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                            <div class="bg-emerald-50/70 border border-emerald-200 p-4 rounded-xl">
+                                <div class="font-bold text-emerald-900 mb-1">✔ 직접 높임 (특수 어휘 O)</div>
+                                <p class="text-slate-700 mb-2">객체 높임 특수 어휘(<strong>드리다, 모시다, 여쭈다, 뵈다</strong>)는 높여야 할 대상을 직접 높일 때만 사용함.</p>
+                                <div class="bg-white p-2 rounded-lg text-xs text-slate-600 border border-emerald-100">
+                                    예) 나는 그 책을 할아버지께 <strong>드렸다</strong>.
+                                </div>
+                            </div>
+                            <div class="bg-rose-50/70 border border-rose-200 p-4 rounded-xl">
+                                <div class="font-bold text-rose-900 mb-1">✔ 간접 높임 (특수 어휘 X → '-(으)시-' O)</div>
+                                <p class="text-slate-700 mb-2">대상의 <strong>신체 일부, 소유물, 생각</strong> 등을 높일 때는 특수 어휘를 쓰지 않고 선어말 어미 <strong>'-(으)시-'</strong>로 높임.</p>
+                                <div class="bg-white p-2 rounded-lg text-xs text-slate-600 border border-rose-100">
+                                    예) 교장 선생님의 말씀이 <strong>있으시겠습니다</strong>. (O)<br>
+                                    <span class="text-rose-500 line-through">교장 선생님의 말씀이 계시겠습니다. (X)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 상대 높임법 체계표 -->
+                    <div class="mb-6">
+                        <h4 class="font-bold text-emerald-700 text-sm sm:text-base mb-2.5">② 상대 높임의 종결 어미 체계</h4>
+                        <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+                            <table class="w-full text-xs sm:text-sm text-center border-collapse">
+                                <thead class="bg-slate-100 text-slate-700 font-bold">
+                                    <tr>
+                                        <th class="p-2.5 border-b border-r border-slate-200" colspan="2">구분</th>
+                                        <th class="p-2.5 border-b border-r border-slate-200">평서</th>
+                                        <th class="p-2.5 border-b border-r border-slate-200">의문</th>
+                                        <th class="p-2.5 border-b border-r border-slate-200">명령</th>
+                                        <th class="p-2.5 border-b border-r border-slate-200">청유</th>
+                                        <th class="p-2.5 border-b border-slate-200">감탄</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    <tr>
+                                        <td rowspan="4" class="p-2 bg-indigo-50/50 font-bold text-indigo-800 border-r border-slate-200">격식체</td>
+                                        <td class="p-2 font-semibold bg-slate-50 border-r border-slate-200">하십시오체</td>
+                                        <td class="p-2 border-r border-slate-200">합니다</td>
+                                        <td class="p-2 border-r border-slate-200 bg-amber-50/50 font-medium">합니까?</td>
+                                        <td class="p-2 border-r border-slate-200">하십시오</td>
+                                        <td class="p-2 border-r border-slate-200 bg-amber-50/50 font-medium">(하시지요)</td>
+                                        <td class="p-2 text-slate-400">-</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-semibold bg-slate-50 border-r border-slate-200">하오체</td>
+                                        <td class="p-2 border-r border-slate-200">하오</td>
+                                        <td class="p-2 border-r border-slate-200">하오?</td>
+                                        <td class="p-2 border-r border-slate-200">하오, 하구려</td>
+                                        <td class="p-2 border-r border-slate-200 bg-amber-50/50 font-medium">합시다</td>
+                                        <td class="p-2">하는구려</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-semibold bg-slate-50 border-r border-slate-200">하게체</td>
+                                        <td class="p-2 border-r border-slate-200">하네, 함세</td>
+                                        <td class="p-2 border-r border-slate-200">하는가?, 하나?</td>
+                                        <td class="p-2 border-r border-slate-200 bg-amber-50/50 font-medium">하게</td>
+                                        <td class="p-2 border-r border-slate-200">하세</td>
+                                        <td class="p-2">하는구먼</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-semibold bg-slate-50 border-r border-slate-200">해라체</td>
+                                        <td class="p-2 border-r border-slate-200">한다</td>
+                                        <td class="p-2 border-r border-slate-200">하냐?, 하니?</td>
+                                        <td class="p-2 border-r border-slate-200">해라</td>
+                                        <td class="p-2 border-r border-slate-200 bg-amber-50/50 font-medium">하자</td>
+                                        <td class="p-2">하는구나</td>
+                                    </tr>
+                                    <tr>
+                                        <td rowspan="2" class="p-2 bg-emerald-50/50 font-bold text-emerald-800 border-r border-slate-200">비격식체</td>
+                                        <td class="p-2 font-semibold bg-slate-50 border-r border-slate-200">해요체</td>
+                                        <td class="p-2 border-r border-slate-200 bg-amber-50/50 font-medium">해요, 하지요</td>
+                                        <td class="p-2 border-r border-slate-200">해요?, 하지요?</td>
+                                        <td class="p-2 border-r border-slate-200">해요, 하지요</td>
+                                        <td class="p-2 border-r border-slate-200">해요, 하지요</td>
+                                        <td class="p-2">해요, 하지요</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-semibold bg-slate-50 border-r border-slate-200">해체</td>
+                                        <td class="p-2 border-r border-slate-200">해, 하지</td>
+                                        <td class="p-2 border-r border-slate-200">해?, 하지?</td>
+                                        <td class="p-2 border-r border-slate-200">해, 하지</td>
+                                        <td class="p-2 border-r border-slate-200">해, 하지</td>
+                                        <td class="p-2">해, 하지</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">※ <strong>해체 + 보조사 '요' = 해요체</strong> (예: 비가 와. → 비가 와<strong>요</strong>.) / <strong>화자의 태도:</strong> 평소 해체를 쓰던 선생님이 해요체를 쓰면 <strong>거리감(질책)</strong>을 나타냄.</p>
+                    </div>
+
+                    <!-- 겸양 표현 -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                        <h4 class="font-bold text-emerald-700 text-sm mb-1.5">③ 겸양 표현 (나를 낮추어 상대를 높임)</h4>
+                        <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                            화자가 자기 자신을 낮추어 표현함으로써 결과적으로 상대를 높이는 효과를 줌.<br>
+                            • <strong>선어말 어미 '-오-', '-사오-':</strong> 8시에 마감하<strong>오</strong>니, 매장 이용에 참고해 주시기 바랍니다.<br>
+                            • <strong>특수 어휘 '저', '말씀':</strong> 선생님, <strong>제</strong>가 드릴 <strong>말씀</strong>이 있습니다.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 개념 카드 3: 시간 표현 (시제와 동작상) -->
+                <div class="bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-slate-200">
+                    <div class="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                        <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 font-black flex items-center justify-center">3</span>
+                        <h3 class="text-lg sm:text-xl font-bold text-slate-800">시간 표현 (관형사형 어미 · 절대/상대 시제 · 동작상)</h3>
+                    </div>
+
+                    <!-- 관형사형 어미 표 -->
+                    <div class="mb-6">
+                        <h4 class="font-bold text-amber-800 text-sm sm:text-base mb-2.5">① 품사에 따른 관형사형 어미와 시제</h4>
+                        <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+                            <table class="w-full text-xs sm:text-sm text-center border-collapse">
+                                <thead class="bg-slate-100 text-slate-700 font-bold">
+                                    <tr>
+                                        <th class="p-2.5 border-b border-r border-slate-200 w-20">시제</th>
+                                        <th class="p-2.5 border-b border-r border-slate-200">동사</th>
+                                        <th class="p-2.5 border-b border-r border-slate-200">형용사 · '이다'</th>
+                                        <th class="p-2.5 border-b border-slate-200">예문</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    <tr>
+                                        <td class="p-2.5 font-bold bg-slate-50 border-r border-slate-200">과거</td>
+                                        <td class="p-2.5 border-r border-slate-200 font-semibold text-indigo-600">-(으)ㄴ, -던</td>
+                                        <td class="p-2.5 border-r border-slate-200 font-semibold text-emerald-600">-던</td>
+                                        <td class="p-2.5 text-left">제가 [읽은/읽던/읽었던] 책 / [학생이던] 시절</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold bg-slate-50 border-r border-slate-200">현재</td>
+                                        <td class="p-2.5 border-r border-slate-200 font-semibold text-indigo-600">-는</td>
+                                        <td class="p-2.5 border-r border-slate-200 font-semibold text-emerald-600">-(으)ㄴ</td>
+                                        <td class="p-2.5 text-left">책을 <strong>읽는</strong> 사람 / <strong>슬픈</strong> 표정 / <strong>회장인</strong> 선주</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold bg-slate-50 border-r border-slate-200">미래</td>
+                                        <td colspan="2" class="p-2.5 border-r border-slate-200 font-semibold text-amber-600">-(으)ㄹ</td>
+                                        <td class="p-2.5 text-left">저녁에 <strong>먹을</strong> 음식은 덜어 두자.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                            <h4 class="font-bold text-amber-800 text-sm mb-2">② 절대 시제 vs 상대 시제 & 현재 시제의 미래 쓰임</h4>
+                            <ul class="text-xs sm:text-sm text-slate-700 space-y-2 leading-relaxed">
+                                <li>• <strong>절대 시제:</strong> <strong>발화시</strong> 기준 → 주로 <span class="underline decoration-amber-400 decoration-2">종결형</span>에서 나타남.</li>
+                                <li>• <strong>상대 시제:</strong> <strong>사건시</strong> 기준 → 주로 <span class="underline decoration-amber-400 decoration-2">관형사형</span>에서 나타남.<br><span class="text-slate-500 text-xs">예) "휴지를 <strong>줍는</strong> 영수를 도왔다." → '줍는'은 도운 시점 기준 <strong>상대 시제(현재)</strong>, '도왔다'는 발화시 기준 <strong>절대 시제(과거)</strong></span></li>
+                                <li>• <strong>현재 시제로 나타내는 미래:</strong> 확정적인 미래 일을 현재 시제로 표현함. (예: 버스가 곧 <strong>도착한다</strong>. / 내일 미국으로 <strong>떠난다</strong>.)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+                            <h4 class="font-bold text-amber-800 text-sm mb-2">③ 동작상과 '-고 있다'의 중의성</h4>
+                            <ul class="text-xs sm:text-sm text-slate-700 space-y-2 leading-relaxed">
+                                <li>• <strong>진행상:</strong> '-고 있다', '-아/어 가다' 외에 <span class="bg-amber-100 px-1 rounded font-semibold">'-(으)면서'</span>로도 나타냄. (예: 음악을 들<strong>으면서</strong> 청소를 한다.)</li>
+                                <li>• <strong>'-고 있다'의 중의성:</strong> 의복류 착용 동사('신다, 쓰다, 끼다, 입다')와 결합하면 <strong>진행상(쓰는 중)</strong>과 <strong>완료상(쓴 상태)</strong> 두 가지로 해석됨.<br><span class="text-slate-500 text-xs">예) 철수가 안경을 쓰고 있다.</span></li>
+                                <li>• <strong>화자의 태도:</strong> '-었었-'은 <span class="font-semibold">현재와의 단절</span>(어렸을 때 달리기를 잘했었다), '-겠-'은 <span class="font-semibold">추측</span>이나 <span class="font-semibold">의지</span>를 드러냄.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-5 text-center text-xs text-slate-500 mt-auto">
+        <p>화법과 언어 자기주도 학습 웹 앱 · 개념 학습지 완벽 복습 시스템</p>
+    </footer>
+
+    <script>
+        /**
+         * 퀴즈 문항 데이터 (학습지 및 교사용 지도서 기반 10문항)
+         * 각 문항은 답을 바로 알려주지 않고 스스로 생각할 수 있는 힌트와 오답 시 유도 피드백을 포함합니다.
+         */
+        const quizData = [
+            {
+                id: 1,
+                category: "1. 문장 종결 표현",
+                question: "다음 중 문장 유형의 제약이 올바르게 지켜진 문장은 무엇일까요?",
+                example: "명령문과 청유문은 서술어의 품사에 제약을 받으며, 감탄문은 청자를 의식하는 정도에서 다른 문장 유형과 차이가 있습니다.",
+                hint: "형용사는 성질이나 상태를 나타내므로 행동 변화를 요구하는 명령문이나 청유문의 서술어로 쓰이기 어렵습니다. 또한 감탄문은 '독백'의 성격을 지닙니다.",
+                options: [
+                    "자, 우리 모두 시험에서 좋은 성적을 거두도록 예쁘자!",
+                    "내일은 날씨가 오늘보다 훨씬 더 따뜻해라.",
+                    "와, 저 학생은 보이지 않는 곳에서도 정말 열심히 노력했구나!",
+                    "너는 지금 당장 마음이 넓어라."
+                ],
+                correctIndex: 2,
+                wrongFeedback: "선택한 문장의 서술어 품사를 살펴보세요! '예쁘다', '따뜻하다', '넓다'는 모두 형용사입니다. 힌트를 참고해 동사가 쓰이거나 감탄문이 바르게 쓰인 문장을 찾아보세요.",
+                correctFeedback: "정확합니다! '노력했구나!'는 화자가 거의 독백하는 상태에서 느낌을 표현한 감탄문이며, 명령문·청유문은 원칙적으로 동사만 서술어로 쓸 수 있습니다."
+            },
+            {
+                id: 2,
+                category: "1. 직접·간접 발화",
+                question: "열린 창문으로 빗방울이 들이치는 것을 본 어머니가 아들에게 \"어머, 비 온다.\"라고 말했습니다. 이 발화에 대한 설명으로 가장 적절한 것은?",
+                example: "상황: 창문이 열려 있어 방바닥이 젖고 있는 상황에서 어머니가 아들에게 건넨 말",
+                hint: "문장의 겉모습(종결 어미)은 평서문이지만, 어머니가 아들에게 바라는 실제 행동(의도)이 무엇인지 생각해 보세요.",
+                options: [
+                    "문장 유형과 화자의 의도가 일치하는 직접 발화이다.",
+                    "의문문을 사용하여 청자에게 대답의 선택권을 주고 있다.",
+                    "평서문을 통해 명령의 의도를 완곡하게 전달하는 간접 발화이다.",
+                    "청유문을 사용하여 화자와 청자가 함께 창문을 닫을 것을 제안하고 있다."
+                ],
+                correctIndex: 2,
+                wrongFeedback: "문장의 겉모습('비 온다.')은 평서문이지만, 어머니의 속마음은 단순히 날씨 정보를 알려주는 것이 아닙니다. 창문을 닫아 달라는 의도가 어떻게 표현되었는지 다시 생각해 보세요.",
+                correctFeedback: "훌륭합니다! 문장 유형은 평서문이지만 실제 의도는 '창문을 닫아라'라는 명령이므로 간접 발화입니다. 이를 통해 청자의 부담이나 불쾌감을 덜어 줄 수 있습니다."
+            },
+            {
+                id: 3,
+                category: "2. 간접 높임과 특수 어휘",
+                question: "다음 중 높임 표현이 어법에 맞게 바르게 쓰인 문장은 무엇일까요?",
+                example: "높여야 할 대상의 신체 일부, 소유물, 생각 등을 높일 때에는 '간접 높임'을 사용합니다.",
+                hint: "'계시다', '말씀하시다', '드시다' 같은 특수 어휘는 높임의 대상을 '직접' 높일 때만 씁니다. 대상의 소유물이나 말, 생각 등은 선어말 어미 '-(으)시-'를 결합해 높입니다.",
+                options: [
+                    "다음으로 교장 선생님의 훈화 말씀이 계시겠습니다.",
+                    "할머니께서는 아직 귀가 밝으셔서 작은 소리도 잘 들으신다.",
+                    "선생님께서는 오늘 오후에 중요한 회의가 계시다.",
+                    "할아버지께서는 진지가 아직 방에 계십니다."
+                ],
+                correctIndex: 1,
+                wrongFeedback: "'말씀', '회의', '진지'는 높임 대상 그 자체가 아니라 대상의 말이나 일, 소유물입니다. 간접 높임에는 특수 어휘 '계시다' 대신 어떤 표현을 써야 할지 힌트를 확인해 보세요!",
+                correctFeedback: "정답입니다! 할머니의 신체 일부인 '귀'를 높이기 위해 특수 어휘가 아닌 선어말 어미 '-(으)시-'를 사용해 '밝으셔서'로 바르게 간접 높임을 실현했습니다."
+            },
+            {
+                id: 4,
+                category: "2. 객체 높임과 특수 어휘",
+                question: "다음 밑줄 친 부분 중 높임의 대상(주체/객체/상대)이 나머지 셋과 다른 하나는 무엇일까요?",
+                example: "① 어머니께 선물을 드렸다.\n② 할머니를 모시고 공원에 갔다.\n③ 선생님께 궁금한 점을 여쭈었다.\n④ 할아버지께서 방에 들어가신다.",
+                hint: "문장의 서술어가 나타내는 행위의 '주체(행동하는 사람)'를 높이는지, 행위가 미치는 대상인 '객체(부사어/목적어)'를 높이는지 구분해 보세요.",
+                options: [
+                    "① 어머니께 선물을 드렸다.",
+                    "② 할머니를 모시고 공원에 갔다.",
+                    "③ 선생님께 궁금한 점을 여쭈었다.",
+                    "④ 할아버지께서 방에 들어가신다."
+                ],
+                correctIndex: 3,
+                wrongFeedback: "선택하신 문장은 '드리다, 모시다, 여쭈다'라는 특수 어휘를 통해 부사어나 목적어(객체)를 높이고 있습니다. 주어를 높이는 주체 높임 문장을 찾아보세요!",
+                correctFeedback: "완벽합니다! ①, ②, ③은 특수 어휘를 사용한 객체 높임이고, ④는 서술어의 주체인 '할아버지'를 선어말 어미 '-시-'로 높인 주체 높임입니다."
+            },
+            {
+                id: 5,
+                category: "2. 상대 높임법 체계",
+                question: "상대 높임법의 등급과 문장 유형이 바르게 연결되지 않은 것은 무엇일까요?",
+                example: "상대 높임법은 격식체(하십시오체, 하오체, 하게체, 해라체)와 비격식체(해요체, 해체)로 나뉩니다.",
+                hint: "격식체 중 '하게체'와 '하오체'의 종결 어미를 떠올려 보세요. '합시다'는 청자에게 함께 행동하자고 제안하는 등급의 청유형입니다.",
+                options: [
+                    "하십시오체 - 의문형: 합니까?",
+                    "하오체 - 감탄형: 하는구려",
+                    "하게체 - 청유형: 합시다",
+                    "해체 - 평서형: 해, 하지"
+                ],
+                correctIndex: 2,
+                wrongFeedback: "선택한 보기는 옳게 연결된 표현입니다! '하게체'의 청유형은 '하세'이고, '합시다'는 어느 등급의 청유형인지 다시 살펴보세요.",
+                correctFeedback: "정답입니다! '합시다'는 하오체의 청유형이며, 하게체의 청유형은 '하세'입니다. 또한 비격식체 해체에 보조사 '요'가 붙으면 해요체가 됩니다."
+            },
+            {
+                id: 6,
+                category: "2. 겸양 표현과 화자의 태도",
+                question: "다음 안내문에서 상대를 높이기 위해 사용한 문법적 장치로 가장 적절한 것은?",
+                example: "\"고객님, 저희 매장은 오후 8시에 마감하오니 이용에 참고해 주시기 바랍니다.\"",
+                hint: "화자가 자기 자신을 낮추어 표현함으로써 결과적으로 상대를 높이는 '겸양 표현'에 주목해 보세요. 어간 '마감하-' 뒤에 무엇이 붙었나요?",
+                options: [
+                    "객체 높임 특수 어휘를 사용하여 고객을 직접 높였다.",
+                    "선어말 어미 '-오-'를 사용하여 화자 자신을 낮추는 겸양을 표현했다.",
+                    "비격식체인 해요체를 사용하여 고객에게 친근감을 드러냈다.",
+                    "주체 높임 선어말 어미 '-(으)시-'를 통해 매장을 간접 높임했다."
+                ],
+                correctIndex: 1,
+                wrongFeedback: "'마감하오니'의 형태소를 분석해 보세요! '마감하- + -오- + -니'에서 '-오-'는 화자가 자신을 낮추어 상대를 높이는 겸양의 선어말 어미입니다.",
+                correctFeedback: "정확히 짚어냈습니다! 겸양 표현은 선어말 어미 '-오-', '-사오-'나 특수 어휘 '저', '말씀' 등을 통해 자신을 낮춤으로써 상대를 높이는 효과를 줍니다."
+            },
+            {
+                id: 7,
+                category: "3. 관형사형 어미와 시제",
+                question: "다음 밑줄 친 관형사형 어미 중 나타내는 시제가 나머지 셋과 다른 하나는?",
+                example: "동사와 형용사는 현재 시제를 나타내는 관형사형 어미가 서로 다릅니다.",
+                hint: "동사의 현재 관형사형 어미는 '-는'이고, 형용사 및 '이다'의 현재 관형사형 어미는 '-(으)ㄴ'입니다. 반면 동사에 '-(으)ㄴ'이 붙으면 과거가 됩니다!",
+                options: [
+                    "도서관에서 책을 읽는 사람들이 참 많다.",
+                    "그녀는 창밖을 보며 슬픈 표정을 지었다.",
+                    "우리 학교 학생회장인 선주가 방금 도착했다.",
+                    "어제 내가 읽은 책은 추리 소설이었다."
+                ],
+                correctIndex: 3,
+                wrongFeedback: "선택하신 문장은 '현재 시제'를 나타내고 있습니다. 동사 '읽다'에 어미 '-(으)ㄴ'이 결합한 문장이 어떤 시제를 나타내는지 비교해 보세요!",
+                correctFeedback: "정답입니다! ①(동사+는), ②(형용사+ㄴ), ③(이다+ㄴ)은 모두 현재 시제이지만, ④의 '읽은'은 동사에 '-(으)ㄴ'이 결합하여 과거 시제를 나타냅니다."
+            },
+            {
+                id: 8,
+                category: "3. 절대 시제와 상대 시제",
+                question: "다음 문장의 시제에 대한 설명으로 가장 적절한 것은?",
+                example: "\"나는 어제 운동장에서 휴지를 줍는 영수를 도왔다.\"",
+                hint: "문장 전체의 종결형('도왔다')은 말하는 시점(발화시)을 기준으로 하고, 관형사형('줍는')은 영수를 도왔던 사건의 시점(사건시)을 기준으로 합니다.",
+                options: [
+                    "'줍는'은 발화시를 기준으로 한 절대 시제(현재)를 나타낸다.",
+                    "'도왔다'는 사건시를 기준으로 한 상대 시제(과거)를 나타낸다.",
+                    "'줍는'은 영수를 도운 시점을 기준으로 한 상대 시제(현재)를 나타낸다.",
+                    "관형사형 어미와 종결 어미 모두 발화시를 기준으로 시제가 결정된다."
+                ],
+                correctIndex: 2,
+                wrongFeedback: "휴지를 줍는 행동은 지금(발화시) 일어나고 있는 것이 아니라, '어제 영수를 도왔던 그 순간(사건시)'을 기준으로 동시에 일어난 일입니다. 기준 시점을 다시 확인해 보세요!",
+                correctFeedback: "완벽한 이해입니다! 관형사형 '줍는'은 주절의 사건시(도운 시점)를 기준으로 하는 상대 시제(현재)이고, 종결형 '도왔다'는 발화시를 기준으로 하는 절대 시제(과거)입니다."
+            },
+            {
+                id: 9,
+                category: "3. 동작상과 중의성",
+                question: "다음 문장이 두 가지 의미(진행상과 완료상)로 해석되는 이유로 가장 적절한 것은?",
+                example: "\"철수가 뿔테 안경을 쓰고 있다.\"",
+                hint: "동작상 보조 용언 '-고 있다'가 '입다, 쓰다, 신다, 끼다' 같은 의복·장신구 착용 동사와 결합할 때 어떤 두 가지 상황이 떠오르는지 생각해 보세요.",
+                options: [
+                    "시간 부사어가 생략되어 과거와 미래의 의미가 동시에 나타나기 때문이다.",
+                    "착용 동사와 '-고 있다'가 결합하여 '착용하는 과정(진행)'과 '착용한 상태(완료)'를 모두 나타낼 수 있기 때문이다.",
+                    "연결 어미 '-(으)면서'의 생략으로 두 가지 동작이 동시에 진행됨을 뜻하기 때문이다.",
+                    "선어말 어미 '-었었-'이 결합하여 현재와의 단절을 나타내기 때문이다."
+                ],
+                correctIndex: 1,
+                wrongFeedback: "'안경을 쓰고 있다'는 지금 손으로 안경을 얼굴에 얹고 있는 동작 중일 수도 있고, 이미 다 써서 코에 걸치고 있는 상태일 수도 있습니다. 이와 관련된 문법 개념을 찾아보세요!",
+                correctFeedback: "정답입니다! 의복류 착용과 관련된 동사('쓰다, 신다, 입다, 끼다')에 '-고 있다'가 결합하면 동작의 진행상과 결과의 완료상이라는 중의성을 띠게 됩니다."
+            },
+            {
+                id: 10,
+                category: "3. 시간 표현과 화자의 태도",
+                question: "다음 중 시제 표현을 통해 드러나는 화자의 태도가 바르게 연결된 것은?",
+                example: "시제는 단순한 시간의 선후 관계뿐만 아니라 화자의 추측, 의지, 단절감, 확정적 태도 등을 드러냅니다.",
+                hint: "'버스가 곧 도착한다'처럼 앞으로 일어날 일을 현재 시제로 말할 때 화자가 그 일을 얼마나 확실하게 여기고 있는지 생각해 보세요. 또한 '-었었-'은 과거와 현재의 단절을 뜻합니다.",
+                options: [
+                    "내일 야외 활동은 비가 오겠구나. → 화자의 굳은 의지",
+                    "나는 어렸을 때 달리기를 정말 잘했었다. → 현재까지 계속되는 상태",
+                    "기차가 곧 플랫폼에 도착한다. → 앞으로 일어날 일에 대한 확정적 태도",
+                    "이번 시험에서는 기필코 목표를 달성하겠다. → 막연한 추측"
+                ],
+                correctIndex: 2,
+                wrongFeedback: "선어말 어미 '-겠-'은 주어가 1인칭일 때 의지, 3인칭일 때 추측을 나타냅니다. 또한 '-었었-'은 현재는 그렇지 않다는 단절감을 나타냅니다. 현재 시제로 미래를 표현한 문장을 찾아보세요!",
+                correctFeedback: "대단합니다! 모든 개념을 완벽히 이해하셨네요. 앞으로 일어날 미래의 일을 현재 시제로 표현하면 화자가 그 사건을 확정적인 사실로 인식하고 있음을 드러냅니다."
+            }
+        ];
+
+        // 앱 상태 관리 변수
+        let currentQuestionIndex = 0;
+        let userAnswers = new Array(quizData.length).fill(null); // 각 문제별 맞힌 여부 (true/false/null)
+        let selectedOptions = new Array(quizData.length).fill(null); // 현재 선택된 보기 인덱스
+        let bestScore = 0;
+        let isUnlocked = false;
+
+        // 초기화 (로컬 스토리지에서 최고 점수 불러오기)
+        window.onload = function() {
+            const savedBest = localStorage.getItem('grammar_app_best_score');
+            if (savedBest) {
+                bestScore = parseInt(savedBest, 10);
+                if (bestScore >= 90) {
+                    isUnlocked = true;
+                }
+            }
+            updateHeaderStatus();
+            renderQuestion();
+        };
+
+        // 상단 헤더 점수 및 잠금 상태 UI 업데이트
+        function updateHeaderStatus() {
+            document.getElementById('header-best-score').textContent = `${bestScore}점`;
+            document.getElementById('locked-current-best').textContent = `${bestScore}점`;
+
+            const unlockBadge = document.getElementById('unlock-badge');
+            const tab2Icon = document.getElementById('tab2-icon');
+
+            if (isUnlocked) {
+                unlockBadge.className = "flex items-center gap-1.5 text-xs font-semibold text-emerald-300";
+                unlockBadge.innerHTML = `<i class="fa-solid fa-unlock"></i><span>복습 노트 열림</span>`;
+                tab2Icon.className = "fa-solid fa-book-open text-emerald-500";
+            } else {
+                unlockBadge.className = "flex items-center gap-1.5 text-xs font-semibold text-rose-200";
+                unlockBadge.innerHTML = `<i class="fa-solid fa-lock"></i><span>복습 노트 잠김</span>`;
+                tab2Icon.className = "fa-solid fa-lock text-slate-400";
+            }
+        }
+
+        // 탭 전환 함수 (탭 1 <-> 탭 2)
+        function switchTab(tabNum) {
+            const tab1Content = document.getElementById('tab-1-content');
+            const tab2Content = document.getElementById('tab-2-content');
+            const tab1Btn = document.getElementById('tab-btn-1');
+            const tab2Btn = document.getElementById('tab-btn-2');
+
+            if (tabNum === 1) {
+                tab1Content.classList.remove('hidden');
+                tab2Content.classList.add('hidden');
+                
+                tab1Btn.className = "flex-1 sm:flex-none sm:px-8 py-3.5 font-bold text-sm sm:text-base border-b-2 border-indigo-600 text-indigo-600 flex items-center justify-center gap-2 transition-colors";
+                tab2Btn.className = "flex-1 sm:flex-none sm:px-8 py-3.5 font-bold text-sm sm:text-base border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center gap-2 transition-colors";
+            } else {
+                tab1Content.classList.add('hidden');
+                tab2Content.classList.remove('hidden');
+
+                tab2Btn.className = "flex-1 sm:flex-none sm:px-8 py-3.5 font-bold text-sm sm:text-base border-b-2 border-indigo-600 text-indigo-600 flex items-center justify-center gap-2 transition-colors";
+                tab1Btn.className = "flex-1 sm:flex-none sm:px-8 py-3.5 font-bold text-sm sm:text-base border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center justify-center gap-2 transition-colors";
+
+                // 90점 이상 잠금 해제 여부에 따라 화면 분기
+                if (isUnlocked) {
+                    document.getElementById('locked-view').classList.add('hidden');
+                    document.getElementById('unlocked-view').classList.remove('hidden');
+                } else {
+                    document.getElementById('locked-view').classList.remove('hidden');
+                    document.getElementById('unlocked-view').classList.add('hidden');
+                    showToast("퀴즈에서 90점 이상을 달성하면 핵심 복습 노트가 열립니다!");
+                }
+            }
+        }
+
+        // 토스트 메시지 표시 (alert 대신 사용)
+        let toastTimeout;
+        function showToast(message) {
+            const toastBox = document.getElementById('toast-box');
+            const toastMsg = document.getElementById('toast-message');
+            toastMsg.textContent = message;
+            toastBox.classList.remove('hidden');
+            toastBox.classList.add('fade-in');
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastBox.classList.add('hidden');
+            }, 3200);
+        }
+
+        // 현재 문제 화면 렌더링
+        function renderQuestion() {
+            const q = quizData[currentQuestionIndex];
+            
+            // 상단 진행률 및 번호 업데이트
+            document.getElementById('quiz-category').textContent = q.category;
+            document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
+            document.getElementById('total-q-num').textContent = quizData.length;
+            
+            const currentScore = calculateCurrentScore();
+            document.getElementById('current-score').textContent = currentScore;
+
+            const progressPercent = ((currentQuestionIndex + 1) / quizData.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            // 문제 텍스트 및 예문
+            document.getElementById('question-text').textContent = q.question;
+            const exampleBox = document.getElementById('example-box');
+            if (q.example) {
+                exampleBox.innerHTML = q.example.replace(/\n/g, '<br>');
+                exampleBox.classList.remove('hidden');
+            } else {
+                exampleBox.classList.add('hidden');
+            }
+
+            // 힌트 초기화
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('hint-text').textContent = q.hint;
+
+            // 선택지 생성
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const isSolvedCorrectly = userAnswers[currentQuestionIndex] === true;
+            const prevSelected = selectedOptions[currentQuestionIndex];
+
+            q.options.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                
+                // 기본 스타일
+                let btnStyle = "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-3.5 text-sm sm:text-base font-medium ";
+                let badgeStyle = "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ";
+
+                if (isSolvedCorrectly && idx === q.correctIndex) {
+                    // 이미 정답을 맞힌 문제일 때 정답 강조
+                    btnStyle += "border-emerald-500 bg-emerald-50/80 text-emerald-900";
+                    badgeStyle += "bg-emerald-500 text-white";
+                } else if (prevSelected === idx && !isSolvedCorrectly) {
+                    // 방금 오답을 선택한 상태
+                    btnStyle += "border-rose-400 bg-rose-50/70 text-rose-900";
+                    badgeStyle += "bg-rose-500 text-white";
+                } else {
+                    btnStyle += "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 text-slate-700";
+                    badgeStyle += "bg-slate-100 text-slate-600";
+                }
+
+                btn.className = btnStyle;
+                btn.innerHTML = `
+                    <span class="${badgeStyle}">${idx + 1}</span>
+                    <span class="leading-snug">${optText}</span>
+                `;
+
+                // 정답을 이미 맞힌 경우 클릭 방지, 아니면 선택 가능
+                if (!isSolvedCorrectly) {
+                    btn.onclick = () => handleOptionSelect(idx);
+                }
+
+                optionsContainer.appendChild(btn);
+            });
+
+            // 피드백 영역 상태 복원
+            const feedbackBox = document.getElementById('feedback-box');
+            if (isSolvedCorrectly) {
+                showFeedback(true, "정답입니다!", q.correctFeedback);
+                document.getElementById('next-btn').disabled = false;
+            } else if (prevSelected !== null) {
+                showFeedback(false, "다시 한 번 생각해 볼까요?", q.wrongFeedback);
+                document.getElementById('next-btn').disabled = true;
+            } else {
+                feedbackBox.classList.add('hidden');
+                document.getElementById('next-btn').disabled = true;
+            }
+
+            // 이전/다음 버튼 상태
+            document.getElementById('prev-btn').disabled = currentQuestionIndex === 0;
+            const nextBtn = document.getElementById('next-btn');
+            if (currentQuestionIndex === quizData.length - 1) {
+                nextBtn.innerHTML = `결과 확인하기 <i class="fa-solid fa-flag-checkered ml-1"></i>`;
+            } else {
+                nextBtn.innerHTML = `다음 문제 <i class="fa-solid fa-arrow-right ml-1"></i>`;
+            }
+        }
+
+        // 힌트 토글
+        function toggleHint() {
+            const hintBox = document.getElementById('hint-box');
+            hintBox.classList.toggle('hidden');
+        }
+
+        // 보기 선택 처리 (핵심 제한사항: 오답 시 정답을 바로 알려주지 않고 힌트를 보도록 유도)
+        function handleOptionSelect(selectedIndex) {
+            const q = quizData[currentQuestionIndex];
+            selectedOptions[currentQuestionIndex] = selectedIndex;
+
+            if (selectedIndex === q.correctIndex) {
+                // 정답 처리 (한 번이라도 틀렸던 문제도 스스로 찾아내면 점수 인정하되, 첫 시도에 맞힌 경우만 만점 처리하려면 별도 관리 가능. 여기서는 학습 유도 목적에 맞춰 스스로 정답을 찾아내면 득점하도록 구성하되, 첫 시도 오답 시 감점 요소를 두어 변별력 확보!)
+                if (userAnswers[currentQuestionIndex] === null) {
+                    userAnswers[currentQuestionIndex] = true; // 첫 시도 정답: 10점
+                } else if (userAnswers[currentQuestionIndex] === 'retry') {
+                    userAnswers[currentQuestionIndex] = 'half'; // 힌트/재도전 후 정답: 5점 (변별력 및 90점 기준 유도)
+                }
+                renderQuestion();
+            } else {
+                // 오답 처리: 정답 번호를 절대 알려주지 않음!
+                if (userAnswers[currentQuestionIndex] === null) {
+                    userAnswers[currentQuestionIndex] = 'retry';
+                }
+                // 힌트 박스 자동 오픈하여 스스로 사고하도록 도움
+                document.getElementById('hint-box').classList.remove('hidden');
+                renderQuestion();
+                
+                // 카드 흔들림 애니메이션
+                const card = document.getElementById('quiz-card');
+                card.classList.remove('shake');
+                void card.offsetWidth; // 리플로우 강제
+                card.classList.add('shake');
+            }
+        }
+
+        // 현재 점수 계산 (첫 시도 정답 10점, 재도전 정답 5점)
+        function calculateCurrentScore() {
+            let score = 0;
+            userAnswers.forEach(ans => {
+                if (ans === true) score += 10;
+                else if (ans === 'half') score += 5;
+            });
+            return score;
+        }
+
+        // 피드백 박스 표시
+        function showFeedback(isCorrect, title, desc) {
+            const box = document.getElementById('feedback-box');
+            const icon = document.getElementById('feedback-icon');
+            const titleEl = document.getElementById('feedback-title');
+            const descEl = document.getElementById('feedback-desc');
+
+            box.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'text-emerald-900', 'bg-rose-50', 'border-rose-200', 'text-rose-900');
+
+            if (isCorrect) {
+                box.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-900');
+                icon.className = "fa-solid fa-circle-check text-emerald-600 text-xl mt-0.5";
+            } else {
+                box.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-900');
+                icon.className = "fa-solid fa-circle-exclamation text-rose-500 text-xl mt-0.5";
+            }
+
+            titleEl.textContent = title;
+            descEl.textContent = desc;
+        }
+
+        // 이전 문제
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        // 다음 문제 또는 결과 보기
+        function nextQuestion() {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        // 퀴즈 완료 처리
+        function finishQuiz() {
+            const finalScore = calculateCurrentScore();
+            
+            // 최고 점수 갱신 및 로컬 스토리지 저장
+            if (finalScore > bestScore) {
+                bestScore = finalScore;
+                localStorage.setItem('grammar_app_best_score', bestScore);
+            }
+            if (bestScore >= 90) {
+                isUnlocked = true;
+            }
+            updateHeaderStatus();
+
+            // 화면 전환
+            document.getElementById('quiz-card').classList.add('hidden');
+            const resultCard = document.getElementById('quiz-result-card');
+            resultCard.classList.remove('hidden');
+
+            document.getElementById('final-score-display').textContent = `${finalScore}점`;
+
+            const iconWrap = document.getElementById('result-icon-wrap');
+            const title = document.getElementById('result-title');
+            const subtitle = document.getElementById('result-subtitle');
+            const goReviewBtn = document.getElementById('go-review-btn');
+
+            if (finalScore >= 90) {
+                iconWrap.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-emerald-100 text-emerald-600";
+                iconWrap.innerHTML = `<i class="fa-solid fa-trophy"></i>`;
+                title.textContent = "축하합니다! 90점 이상 달성!";
+                subtitle.textContent = "문장 종결, 높임, 시간 표현의 핵심 개념을 스스로 훌륭하게 탐구했습니다. 이제 탭 2의 핵심 복습 노트가 잠금 해제되었습니다!";
+                goReviewBtn.classList.remove('hidden');
+            } else {
+                iconWrap.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-amber-100 text-amber-600";
+                iconWrap.innerHTML = `<i class="fa-solid fa-seedling"></i>`;
+                title.textContent = "조금만 더 힘내 볼까요?";
+                subtitle.textContent = "힌트를 활용해서 첫 시도에 정답을 맞히면 문제당 10점을 획득할 수 있습니다. 90점 이상을 달성하여 핵심 복습 노트를 열어 보세요!";
+                if (isUnlocked) {
+                    goReviewBtn.classList.remove('hidden');
+                } else {
+                    goReviewBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        // 퀴즈 다시 시작
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            selectedOptions = new Array(quizData.length).fill(null);
+
+            document.getElementById('quiz-result-card').classList.add('hidden');
+            document.getElementById('quiz-card').classList.remove('hidden');
+            renderQuestion();
+        }
+    </script>
+</body>
+</html>
