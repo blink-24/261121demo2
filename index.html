@@ -965,10 +965,23 @@
         function renderQuestion() {
             const q = quizData[currentQuestionIndex];
             
-            // 상단 진행률 및 번호 업데이트
+            // 상단 진행률 및 번호, 점수 업데이트
             document.getElementById('quiz-category').textContent = q.category;
             document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
             document.getElementById('total-q-num').textContent = quizData.length;
+            document.getElementById('current-score').textContent = calculateCurrentScore();
+            document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / quizData.length) * 100}%`;
+
+            // 발문 및 예문 렌더링
+            document.getElementById('question-text').textContent = q.question;
+            const exampleBox = document.getElementById('example-box');
+            if (q.example) {
+                exampleBox.textContent = q.example;
+                exampleBox.classList.remove('hidden');
+            } else {
+                exampleBox.classList.add('hidden');
+            }
+
             // 힌트 상태 복원 (처음 틀렸거나 사용자가 힌트를 열어둔 경우 계속 열려 있도록 유지)
             const hintBox = document.getElementById('hint-box');
             document.getElementById('hint-text').textContent = q.hint;
