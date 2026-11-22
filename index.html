@@ -222,6 +222,19 @@
                     <div id="final-score-display" class="text-4xl font-black text-indigo-600">0점</div>
                 </div>
 
+                <!-- 문항별 정오표 및 처음 틀렸던 선지·힌트 복습 영역 -->
+                <div id="quiz-review-summary" class="max-w-2xl mx-auto text-left mb-7 bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6">
+                    <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200">
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-check text-indigo-600"></i> 문항별 채점 결과 및 오답 힌트 복습
+                        </h3>
+                        <span class="text-xs text-slate-500 font-medium">총 10문항</span>
+                    </div>
+                    <div id="review-summary-list" class="space-y-3 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- JS로 문항별 정오 여부 및 처음 틀린 선지·힌트 동적 렌더링 -->
+                    </div>
+                </div>
+
                 <!-- 구글 스프레드시트 일회성 제출 카드 (제출 즉시 입력란 초기화 및 비노출) -->
                 <div id="sheet-submit-area" class="max-w-md mx-auto bg-indigo-50/70 border border-indigo-200 rounded-2xl p-5 mb-6 text-left">
                     <div class="flex items-center justify-between mb-2">
@@ -692,12 +705,14 @@
         ];
 
         // 앱 상태 관리 변수
-        // ★ 선생님용: Apps Script 배포 후 발급받은 웹 앱 URL(https://script.google.com/macros/s/.../exec)을 아래 따옴표 안에 붙여넣으세요.
-        const GOOGLE_SCRIPT_WEB_APP_URL = "1G0uEycXS9-rP96fpcjF98g08FgOPtrFODIllvbZFX-0"; 
+        // ★ 선생님용: Apps Script 배포 후 발급받은 웹 앱 URL
+        const GOOGLE_SCRIPT_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz54S-Bc-Vx2-jY50dnDbbW9jQw7OJfpEEWFIII9Ig0yNDklRm64_yEhTcqV6IeHKE8/exec"; 
 
         let currentQuestionIndex = 0;
-        let userAnswers = new Array(quizData.length).fill(null); // 각 문제별 맞힌 여부 (true/false/null)
+        let userAnswers = new Array(quizData.length).fill(null); // 각 문제별 상태: null(미응답), true(첫 시도 정답), 'retry'(오답 후 힌트 열림), 'half'(힌트 후 정답)
         let selectedOptions = new Array(quizData.length).fill(null); // 현재 선택된 보기 인덱스
+        let firstWrongOptions = new Array(quizData.length).fill(null); // 처음 틀렸던 선지 인덱스 기록
+        let hintOpenedState = new Array(quizData.length).fill(false); // 각 문항별 힌트 열림 여부 유지
         let bestScore = 0;
         let isUnlocked = false;
 
@@ -954,50 +969,44 @@
             document.getElementById('quiz-category').textContent = q.category;
             document.getElementById('current-q-num').textContent = currentQuestionIndex + 1;
             document.getElementById('total-q-num').textContent = quizData.length;
-            
-            const currentScore = calculateCurrentScore();
-            document.getElementById('current-score').textContent = currentScore;
-
-            const progressPercent = ((currentQuestionIndex + 1) / quizData.length) * 100;
-            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
-
-            // 문제 텍스트 및 예문
-            document.getElementById('question-text').textContent = q.question;
-            const exampleBox = document.getElementById('example-box');
-            if (q.example) {
-                exampleBox.innerHTML = q.example.replace(/\n/g, '<br>');
-                exampleBox.classList.remove('hidden');
-            } else {
-                exampleBox.classList.add('hidden');
-            }
-
-            // 힌트 초기화
-            document.getElementById('hint-box').classList.add('hidden');
+            // 힌트 상태 복원 (처음 틀렸거나 사용자가 힌트를 열어둔 경우 계속 열려 있도록 유지)
+            const hintBox = document.getElementById('hint-box');
             document.getElementById('hint-text').textContent = q.hint;
+            if (hintOpenedState[currentQuestionIndex] || userAnswers[currentQuestionIndex] === 'retry' || firstWrongOptions[currentQuestionIndex] !== null) {
+                hintBox.classList.remove('hidden');
+            } else {
+                hintBox.classList.add('hidden');
+            }
 
             // 선택지 생성
             const optionsContainer = document.getElementById('options-container');
             optionsContainer.innerHTML = '';
 
-            const isSolvedCorrectly = userAnswers[currentQuestionIndex] === true;
+            // 첫 시도 정답(true) 또는 힌트 후 정답('half') 모두 정답 완료 상태로 판별
+            const isSolvedCorrectly = (userAnswers[currentQuestionIndex] === true || userAnswers[currentQuestionIndex] === 'half');
             const prevSelected = selectedOptions[currentQuestionIndex];
+            const firstWrong = firstWrongOptions[currentQuestionIndex];
 
             q.options.forEach((optText, idx) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 
                 // 기본 스타일
-                let btnStyle = "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-3.5 text-sm sm:text-base font-medium ";
+                let btnStyle = "w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-3.5 text-sm sm:text-base font-medium cursor-pointer ";
                 let badgeStyle = "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ";
 
                 if (isSolvedCorrectly && idx === q.correctIndex) {
-                    // 이미 정답을 맞힌 문제일 때 정답 강조
+                    // 정답을 맞힌 상태일 때 정답 강조
                     btnStyle += "border-emerald-500 bg-emerald-50/80 text-emerald-900";
                     badgeStyle += "bg-emerald-500 text-white";
-                } else if (prevSelected === idx && !isSolvedCorrectly) {
-                    // 방금 오답을 선택한 상태
-                    btnStyle += "border-rose-400 bg-rose-50/70 text-rose-900";
+                } else if (!isSolvedCorrectly && (prevSelected === idx || firstWrong === idx)) {
+                    // 아직 정답을 못 맞혔고, 이전에 틀렸던 오답 선지 표시 (클릭 가능 상태 유지)
+                    btnStyle += "border-rose-400 bg-rose-50/70 text-rose-900 hover:border-indigo-400";
                     badgeStyle += "bg-rose-500 text-white";
+                } else if (isSolvedCorrectly && firstWrong === idx) {
+                    // 정답을 맞힌 후에도 처음 틀렸던 선지를 은은하게 표시
+                    btnStyle += "border-rose-200 bg-rose-50/30 text-slate-500";
+                    badgeStyle += "bg-rose-200 text-rose-700";
                 } else {
                     btnStyle += "border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 text-slate-700";
                     badgeStyle += "bg-slate-100 text-slate-600";
@@ -1006,10 +1015,11 @@
                 btn.className = btnStyle;
                 btn.innerHTML = `
                     <span class="${badgeStyle}">${idx + 1}</span>
-                    <span class="leading-snug">${optText}</span>
+                    <span class="leading-snug flex-1">${optText}</span>
+                    ${(firstWrong === idx) ? '<span class="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700 shrink-0">첫 오답</span>' : ''}
                 `;
 
-                // 정답을 이미 맞힌 경우 클릭 방지, 아니면 선택 가능
+                // 정답을 이미 맞힌 경우만 클릭 방지, 오답/힌트 열림 상태에서는 언제든 다른 선택지 클릭 가능
                 if (!isSolvedCorrectly) {
                     btn.onclick = () => handleOptionSelect(idx);
                 }
@@ -1020,10 +1030,11 @@
             // 피드백 영역 상태 복원
             const feedbackBox = document.getElementById('feedback-box');
             if (isSolvedCorrectly) {
-                showFeedback(true, "정답입니다!", q.correctFeedback);
+                const earnedText = userAnswers[currentQuestionIndex] === true ? "정답입니다! (+10점)" : "스스로 힌트를 활용해 정답을 찾았습니다! (+5점)";
+                showFeedback(true, earnedText, q.correctFeedback);
                 document.getElementById('next-btn').disabled = false;
             } else if (prevSelected !== null) {
-                showFeedback(false, "다시 한 번 생각해 볼까요?", q.wrongFeedback);
+                showFeedback(false, "다시 한 번 생각해 볼까요? (위 힌트를 참고해 다른 선지를 골라보세요)", q.wrongFeedback);
                 document.getElementById('next-btn').disabled = true;
             } else {
                 feedbackBox.classList.add('hidden');
@@ -1040,32 +1051,36 @@
             }
         }
 
-        // 힌트 토글
+        // 힌트 토글 (힌트를 열어도 선택지 클릭에는 전혀 지장이 없도록 상태만 기록)
         function toggleHint() {
             const hintBox = document.getElementById('hint-box');
-            hintBox.classList.toggle('hidden');
+            const isNowHidden = hintBox.classList.toggle('hidden');
+            hintOpenedState[currentQuestionIndex] = !isNowHidden;
         }
 
-        // 보기 선택 처리 (핵심 제한사항: 오답 시 정답을 바로 알려주지 않고 힌트를 보도록 유도)
+        // 보기 선택 처리 (힌트가 떠 있더라도 어떤 선택지든 정상 판별)
         function handleOptionSelect(selectedIndex) {
             const q = quizData[currentQuestionIndex];
             selectedOptions[currentQuestionIndex] = selectedIndex;
 
             if (selectedIndex === q.correctIndex) {
-                // 정답 처리 (한 번이라도 틀렸던 문제도 스스로 찾아내면 점수 인정하되, 첫 시도에 맞힌 경우만 만점 처리하려면 별도 관리 가능. 여기서는 학습 유도 목적에 맞춰 스스로 정답을 찾아내면 득점하도록 구성하되, 첫 시도 오답 시 감점 요소를 두어 변별력 확보!)
-                if (userAnswers[currentQuestionIndex] === null) {
-                    userAnswers[currentQuestionIndex] = true; // 첫 시도 정답: 10점
-                } else if (userAnswers[currentQuestionIndex] === 'retry') {
-                    userAnswers[currentQuestionIndex] = 'half'; // 힌트/재도전 후 정답: 5점 (변별력 및 90점 기준 유도)
+                // 첫 시도 정답이면 10점(true), 한 번이라도 오답을 냈던 문제면 5점('half')
+                if (firstWrongOptions[currentQuestionIndex] === null && userAnswers[currentQuestionIndex] === null) {
+                    userAnswers[currentQuestionIndex] = true;
+                } else {
+                    userAnswers[currentQuestionIndex] = 'half';
                 }
                 renderQuestion();
             } else {
-                // 오답 처리: 정답 번호를 절대 알려주지 않음!
+                // 처음 틀린 선지 인덱스 보존
+                if (firstWrongOptions[currentQuestionIndex] === null) {
+                    firstWrongOptions[currentQuestionIndex] = selectedIndex;
+                }
                 if (userAnswers[currentQuestionIndex] === null) {
                     userAnswers[currentQuestionIndex] = 'retry';
                 }
-                // 힌트 박스 자동 오픈하여 스스로 사고하도록 도움
-                document.getElementById('hint-box').classList.remove('hidden');
+                // 힌트 박스 자동 오픈 및 상태 저장
+                hintOpenedState[currentQuestionIndex] = true;
                 renderQuestion();
                 
                 // 카드 흔들림 애니메이션
@@ -1152,6 +1167,9 @@
 
             document.getElementById('final-score-display').textContent = `${finalScore}점`;
 
+            // 문항별 채점 결과 및 처음 틀렸던 선지·힌트 렌더링
+            renderResultReviewSummary();
+
             const iconWrap = document.getElementById('result-icon-wrap');
             const title = document.getElementById('result-title');
             const subtitle = document.getElementById('result-subtitle');
@@ -1176,11 +1194,65 @@
             }
         }
 
+        // 최종 결과 화면에서 문항별 정오 여부와 처음 틀린 선지에 대한 힌트 표시
+        function renderResultReviewSummary() {
+            const listEl = document.getElementById('review-summary-list');
+            listEl.innerHTML = '';
+
+            quizData.forEach((q, idx) => {
+                const status = userAnswers[idx];
+                const firstWrongIdx = firstWrongOptions[idx];
+                const hadMistake = firstWrongIdx !== null;
+
+                let statusBadge = '';
+                let cardBorder = 'border-slate-200 bg-white';
+
+                if (status === true) {
+                    statusBadge = `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 shrink-0"><i class="fa-solid fa-check mr-1"></i>정답 (10점)</span>`;
+                } else if (status === 'half') {
+                    statusBadge = `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 shrink-0"><i class="fa-solid fa-lightbulb mr-1"></i>힌트 후 정답 (5점)</span>`;
+                    cardBorder = 'border-amber-300 bg-amber-50/30';
+                } else {
+                    statusBadge = `<span class="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-700 shrink-0"><i class="fa-solid fa-xmark mr-1"></i>오답 (0점)</span>`;
+                    cardBorder = 'border-rose-300 bg-rose-50/30';
+                }
+
+                let mistakeHtml = '';
+                if (hadMistake) {
+                    mistakeHtml = `
+                        <div class="mt-2.5 pt-2.5 border-t border-slate-200/80 text-xs space-y-1.5">
+                            <div class="text-rose-700 font-semibold">
+                                • 처음 선택했던 오답: <span class="underline">${firstWrongIdx + 1}번. ${q.options[firstWrongIdx]}</span>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-amber-900 leading-relaxed">
+                                <span class="font-bold text-amber-800"><i class="fa-solid fa-key mr-1"></i>복습 힌트:</span> ${q.hint}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const item = document.createElement('div');
+                item.className = `p-3.5 rounded-xl border ${cardBorder}`;
+                item.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
+                            <span class="text-indigo-600 mr-1">Q${idx + 1}.</span>${q.question}
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    ${mistakeHtml}
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
         // 퀴즈 다시 시작
         function restartQuiz() {
             currentQuestionIndex = 0;
             userAnswers = new Array(quizData.length).fill(null);
             selectedOptions = new Array(quizData.length).fill(null);
+            firstWrongOptions = new Array(quizData.length).fill(null);
+            hintOpenedState = new Array(quizData.length).fill(false);
 
             document.getElementById('quiz-result-card').classList.add('hidden');
             document.getElementById('quiz-card').classList.remove('hidden');
